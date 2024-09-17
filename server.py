@@ -3,6 +3,7 @@ import sqlite3
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import urlparse, parse_qs
 
+from controller import ControllerCurrency
 from models import Currencies
 from config import Addresses
 
@@ -10,15 +11,15 @@ from config import Addresses
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
     def __init__(self, *args, **kwargs):
-        self.model = Currencies('database.db')
+        self.controller = ControllerCurrency()
         super().__init__(*args, **kwargs)
 
     def do_GET(self):
         if self.path.startswith(Addresses.currency):
             curr = self.path.split('/')[-1]
-            self.model.get_one_data(curr)
+            print(self.controller.get_one_data(curr).to_dict())
         elif self.path == Addresses.currencies:
-            self.model.get_all_data()
+            print(self.controller.get_all_data())
 
         self.send_response(200)
         self.send_header('Content-type', 'text/html')
@@ -27,14 +28,16 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         content_length = int(self.headers['Content-Length'])
-        post_data = self.rfile.read(content_length)
+        post_data = self.rfile.read(content_length) # Тело запроса
         data = json.loads(post_data)
-        response = {"message": f"Hello, {data['name']}!"}
+        if self.path == Addresses.currencies:
+            self.controller.add_one_data(data)
+            response = {'data': data}
 
-        self.send_response(200)
-        self.send_header('Content-type', 'application/json')
-        self.end_headers()
-        self.wfile.write(json.dumps(response).encode())
+            self.send_response(201) # Статус ответа: Created
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps(response).encode())
 
 
 def run(server_class=HTTPServer, handler_class=SimpleHTTPRequestHandler, port=8000):

@@ -9,7 +9,7 @@ class Addresses:
     currencies: str = '/currencies'
 
     # Получение конкретной валюты
-    currency: str = '/currency/RUB'
+    currency: str = '/currency/'
 
     # GET Получение списка всех обменных курсов или в случае с
     # POST добавление нового обменного курса в базу
