@@ -24,6 +24,7 @@ class DTOCurrencyPOST:
     def to_dict(self):
         return self.__dict__
 
+
 @dataclass
 class DTOExchangeRatesGET:
     id: int = None
@@ -38,3 +39,10 @@ class DTOExchangeRatesGET:
             "targetCurrency": self.targetCurrency.to_dict(),
             "rate": self.rate
         }
+
+
+@dataclass
+class DTOExchangeRatesPOST:
+    baseCurrency: int
+    targetCurrency: int
+    rate: Decimal

@@ -1,7 +1,7 @@
 import json
 import sqlite3
 
-from DTO import DTOCurrencyPOST
+from DTO import DTOCurrencyPOST, DTOExchangeRatesPOST
 
 
 class Currencies:
@@ -39,7 +39,6 @@ class ExchangeRates:
 
     def get_all_data(self) -> list:
         with sqlite3.connect(self.db_name) as connection:
-            # connection.row_factory = sqlite3.Row
             cursor = connection.cursor()
             cursor.execute("""SELECT ex.ID,
                                     ex.Rate,
@@ -81,3 +80,15 @@ class ExchangeRates:
             cursor.execute(sql, {'base_curr': base_currency, 'targ_curr': target_currency})
             results = cursor.fetchone()
             return results
+
+    def add_one_data(self, dto: DTOExchangeRatesPOST):
+
+        with sqlite3.connect(self.db_name) as connection:
+            cursor = connection.cursor()
+            sql = """SELECT id FROM Currencies WHERE Code = (?)
+            UNION SELECT id FROM Currencies WHERE Code = (?)"""
+            cursor.execute(sql, (dto.baseCurrency, dto.targetCurrency))
+            num_base, num_target = cursor.fetchall()
+            sql = """INSERT INTO ExchangeRates (BaseCurrencyId, TargetCurrencyId, Rate)
+                        VALUES (?, ?, ?)"""
+            cursor.execute(sql, (num_base[0], num_target[0], dto.rate))

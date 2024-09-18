@@ -1,4 +1,4 @@
-from DTO import DTOCurrencyGet, DTOCurrencyPOST, DTOExchangeRatesGET
+from DTO import DTOCurrencyGet, DTOCurrencyPOST, DTOExchangeRatesGET, DTOExchangeRatesPOST
 from models import Currencies, ExchangeRates
 
 
@@ -44,7 +44,7 @@ class ControllerExchangeRates:
             ).to_dict())
         return result
 
-    def get_one_data(self, base_currency, target_currency):
+    def get_one_data(self, base_currency: str, target_currency: str):
         data = self.model.get_one_data(base_currency, target_currency)
         return DTOExchangeRatesGET(
             id=data[0],
@@ -52,3 +52,12 @@ class ControllerExchangeRates:
             targetCurrency=DTOCurrencyGet(data[6], data[7], data[8], data[9]),
             rate=data[1]
         ).to_dict()
+
+    def add_one_data(self, data: dict):
+        self.model.add_one_data(
+            DTOExchangeRatesPOST(
+                baseCurrency=data['baseCurrencyCode'],
+                targetCurrency=data['targetCurrencyCode'],
+                rate=data['rate']
+            )
+        )
