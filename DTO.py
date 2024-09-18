@@ -1,4 +1,6 @@
+import json
 from dataclasses import dataclass
+from decimal import Decimal
 
 
 @dataclass
@@ -21,3 +23,18 @@ class DTOCurrencyPOST:
 
     def to_dict(self):
         return self.__dict__
+
+@dataclass
+class DTOExchangeRatesGET:
+    id: int = None
+    baseCurrency: DTOCurrencyGet = None
+    targetCurrency: DTOCurrencyGet = None
+    rate: Decimal = None
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "baseCurrency": self.baseCurrency.to_dict(),
+            "targetCurrency": self.targetCurrency.to_dict(),
+            "rate": self.rate
+        }

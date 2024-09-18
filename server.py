@@ -3,7 +3,7 @@ import sqlite3
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import urlparse, parse_qs
 
-from controller import ControllerCurrency
+from controller import ControllerCurrency, ControllerExchangeRates
 from models import Currencies
 from config import Addresses
 
@@ -11,16 +11,22 @@ from config import Addresses
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
     def __init__(self, *args, **kwargs):
-        self.controller = ControllerCurrency()
+        self.controller_currency = ControllerCurrency()
+        self.controller_exchange = ControllerExchangeRates()
         super().__init__(*args, **kwargs)
 
     def do_GET(self):
         if self.path.startswith(Addresses.currency):
             curr = self.path.split('/')[-1]
-            print(self.controller.get_one_data(curr).to_dict())
+            print(json.dumps(self.controller_currency.get_one_data(curr).to_dict(), ensure_ascii=False, indent=4))
         elif self.path == Addresses.currencies:
-            print(self.controller.get_all_data())
-
+            print(json.dumps(self.controller_currency.get_all_data(), ensure_ascii=False, indent=4))
+        elif self.path == Addresses.exchangeRates:
+            print(json.dumps(self.controller_exchange.get_all_data(), ensure_ascii=False, indent=4))
+        elif self.path.startswith(Addresses.exchangeRate):
+            base_currency, target_currency = self.path[-6:-3], self.path[-3:]
+            print(json.dumps(self.controller_exchange.get_one_data(base_currency, target_currency), ensure_ascii=False,
+                             indent=4))
         self.send_response(200)
         self.send_header('Content-type', 'text/html')
         self.end_headers()
@@ -28,13 +34,13 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         content_length = int(self.headers['Content-Length'])
-        post_data = self.rfile.read(content_length) # Тело запроса
+        post_data = self.rfile.read(content_length)  # Тело запроса
         data = json.loads(post_data)
         if self.path == Addresses.currencies:
-            self.controller.add_one_data(data)
+            self.controller_currency.add_one_data(data)
             response = {'data': data}
 
-            self.send_response(201) # Статус ответа: Created
+            self.send_response(201)  # Статус ответа: Created
             self.send_header('Content-type', 'application/json')
             self.end_headers()
             self.wfile.write(json.dumps(response).encode())
