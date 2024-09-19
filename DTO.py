@@ -46,3 +46,9 @@ class DTOExchangeRatesPOST:
     baseCurrency: int
     targetCurrency: int
     rate: Decimal
+
+@dataclass
+class DTOExchangeRatesPUTCH:
+    baseCurrency: str
+    targetCurrency: str
+    rate: Decimal

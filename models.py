@@ -1,7 +1,7 @@
 import json
 import sqlite3
 
-from DTO import DTOCurrencyPOST, DTOExchangeRatesPOST
+from DTO import DTOCurrencyPOST, DTOExchangeRatesPOST, DTOExchangeRatesPUTCH
 
 
 class Currencies:
@@ -52,9 +52,9 @@ class ExchangeRates:
                                     cr.Sign
                                 FROM ExchangeRates ex
                                 JOIN Currencies crs
-                                ON crs.id = ex.BaseCurrencyId
+                                  ON crs.id = ex.BaseCurrencyId
                                 JOIN Currencies cr
-                                ON cr.id = ex.TargetCurrencyId""")
+                                  ON cr.id = ex.TargetCurrencyId""")
             results = cursor.fetchall()
             return results
 
@@ -62,33 +62,48 @@ class ExchangeRates:
         with sqlite3.connect(self.db_name) as connection:
             cursor = connection.cursor()
             sql = """SELECT ex.ID,
-                                    ex.Rate,
-                                    crs.ID,
-                                    crs.Code,
-                                    crs.FullName,
-                                    crs.Sign,
-                                    cr.ID,
-                                    cr.Code,
-                                    cr.FullName,
-                                    cr.Sign
-                                FROM ExchangeRates ex
-                                JOIN Currencies crs
-                                ON crs.id = ex.BaseCurrencyId
-                                JOIN Currencies cr
-                                ON cr.id = ex.TargetCurrencyId
-                                WHERE crs.Code =:base_curr AND cr.Code =:targ_curr"""
+                            ex.Rate,
+                            crs.ID,
+                            crs.Code,
+                            crs.FullName,
+                            crs.Sign,
+                            cr.ID,
+                            cr.Code,
+                            cr.FullName,
+                            cr.Sign
+                        FROM ExchangeRates ex
+                        JOIN Currencies crs
+                          ON crs.id = ex.BaseCurrencyId
+                        JOIN Currencies cr
+                          ON cr.id = ex.TargetCurrencyId
+                       WHERE crs.Code =:base_curr 
+                         AND cr.Code =:targ_curr"""
             cursor.execute(sql, {'base_curr': base_currency, 'targ_curr': target_currency})
             results = cursor.fetchone()
             return results
 
     def add_one_data(self, dto: DTOExchangeRatesPOST):
-
         with sqlite3.connect(self.db_name) as connection:
             cursor = connection.cursor()
             sql = """SELECT id FROM Currencies WHERE Code = (?)
-            UNION SELECT id FROM Currencies WHERE Code = (?)"""
+                      UNION 
+                     SELECT id FROM Currencies WHERE Code = (?)"""
             cursor.execute(sql, (dto.baseCurrency, dto.targetCurrency))
             num_base, num_target = cursor.fetchall()
             sql = """INSERT INTO ExchangeRates (BaseCurrencyId, TargetCurrencyId, Rate)
                         VALUES (?, ?, ?)"""
             cursor.execute(sql, (num_base[0], num_target[0], dto.rate))
+
+    def update_one_data(self, dto: DTOExchangeRatesPUTCH):
+        with sqlite3.connect(self.db_name) as connection:
+            cursor = connection.cursor()
+            sql = """SELECT id FROM Currencies WHERE Code = (?)
+                      UNION 
+                     SELECT id FROM Currencies WHERE Code = (?)"""
+            cursor.execute(sql, (dto.baseCurrency, dto.targetCurrency))
+            num_base, num_target = cursor.fetchall()
+            sql = """UPDATE ExchangeRates 
+                        SET Rate = (?)
+                      WHERE BaseCurrencyId = (?)
+                        AND TargetCurrencyId = (?)"""
+            cursor.execute(sql, (dto.rate, num_base[0], num_target[0]))

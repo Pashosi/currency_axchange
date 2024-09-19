@@ -1,4 +1,4 @@
-from DTO import DTOCurrencyGet, DTOCurrencyPOST, DTOExchangeRatesGET, DTOExchangeRatesPOST
+from DTO import DTOCurrencyGet, DTOCurrencyPOST, DTOExchangeRatesGET, DTOExchangeRatesPOST, DTOExchangeRatesPUTCH
 from models import Currencies, ExchangeRates
 
 
@@ -61,3 +61,11 @@ class ControllerExchangeRates:
                 rate=data['rate']
             )
         )
+
+    def update_one_data(self, path: str, data: dict):
+        base_currency, target_currency = path[-6:-3], path[-3:]
+        self.model.update_one_data(DTOExchangeRatesPUTCH(
+            baseCurrency=base_currency,
+            targetCurrency=target_currency,
+            rate=data['rate']
+        ))
