@@ -1,5 +1,12 @@
-from DTO import DTOCurrencyGet, DTOCurrencyPOST, DTOExchangeRatesGET, DTOExchangeRatesPOST, DTOExchangeRatesPUTCH
+
+
+from DTO import DTOCurrencyGet, DTOCurrencyPOST, DTOExchangeRatesGET, DTOExchangeRatesPOST, DTOExchangeRatesPUTCH, \
+    DTOExchangeCurrencyCalculationGET
 from models import Currencies, ExchangeRates
+from urllib.parse import urlparse, parse_qs
+from decimal import Decimal, ROUND_DOWN
+
+from service import ExchangeCurrencyCalculation
 
 
 class ControllerCurrency:
@@ -31,6 +38,7 @@ class ControllerCurrency:
 class ControllerExchangeRates:
     def __init__(self, *args, **kwargs):
         self.model = ExchangeRates('database.db')
+        self.service = ExchangeCurrencyCalculation()
         super().__init__(*args, **kwargs)
 
     def get_all_data(self):
@@ -69,3 +77,14 @@ class ControllerExchangeRates:
             targetCurrency=target_currency,
             rate=data['rate']
         ))
+
+    def get_currency_calculation(self, path: str):
+        parse = urlparse(path)
+        pars_dict = parse_qs(parse.query)
+        # {'amount': ['10'], 'from': ['USD'], 'to': ['AUD']}
+        calculated_currency = self.service.get_currency_calculation(DTOExchangeCurrencyCalculationGET(
+            baseCurrency=DTOCurrencyGet(code=pars_dict['from'][0]),
+            targetCurrency=DTOCurrencyGet(code=pars_dict['to'][0]),
+            amount=Decimal(pars_dict['amount'][0]).quantize(Decimal('.01'), rounding=ROUND_DOWN),
+        ))
+        return calculated_currency.to_dict()

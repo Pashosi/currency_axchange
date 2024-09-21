@@ -47,8 +47,27 @@ class DTOExchangeRatesPOST:
     targetCurrency: int
     rate: Decimal
 
+
 @dataclass
 class DTOExchangeRatesPUTCH:
     baseCurrency: str
     targetCurrency: str
     rate: Decimal
+
+
+@dataclass
+class DTOExchangeCurrencyCalculationGET:
+    baseCurrency: DTOCurrencyGet = None
+    targetCurrency: DTOCurrencyGet = None
+    rate: Decimal = None
+    amount: Decimal = None
+    converted: Decimal = None
+
+    def to_dict(self):
+        return {
+            "baseCurrency": self.baseCurrency.to_dict(),
+            "targetCurrency": self.targetCurrency.to_dict(),
+            "rate": self.rate,
+            "amount": self.amount,
+            "convertedAmount": self.converted
+        }

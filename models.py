@@ -1,7 +1,7 @@
 import json
 import sqlite3
 
-from DTO import DTOCurrencyPOST, DTOExchangeRatesPOST, DTOExchangeRatesPUTCH
+from DTO import DTOCurrencyPOST, DTOExchangeRatesPOST, DTOExchangeRatesPUTCH, DTOExchangeCurrencyCalculationGET
 
 
 class Currencies:
@@ -107,3 +107,18 @@ class ExchangeRates:
                       WHERE BaseCurrencyId = (?)
                         AND TargetCurrencyId = (?)"""
             cursor.execute(sql, (dto.rate, num_base[0], num_target[0]))
+
+    def get_exchange_rate(self, dto: DTOExchangeCurrencyCalculationGET):
+        with sqlite3.connect(self.db_name) as connection:
+            cursor = connection.cursor()
+            sql = """SELECT id FROM Currencies WHERE Code = (?)
+                      UNION 
+                     SELECT id FROM Currencies WHERE Code = (?)"""
+            cursor.execute(sql, (dto.baseCurrency.code, dto.targetCurrency.code))
+            num_base, num_target = cursor.fetchall()
+            sql = """SELECT Rate FROM ExchangeRates
+                      WHERE BaseCurrencyId = (?)
+                        AND TargetCurrencyId = (?)"""
+            cursor.execute(sql, (num_base[0], num_target[0]))
+            rate = cursor.fetchone()
+            return rate[0]

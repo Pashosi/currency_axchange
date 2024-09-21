@@ -1,7 +1,9 @@
 import json
+import simplejson
 import sqlite3
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from urllib.parse import urlparse, parse_qs
+
+from decimal import Decimal
 
 from controller import ControllerCurrency, ControllerExchangeRates
 from config import Addresses
@@ -26,6 +28,9 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             base_currency, target_currency = self.path[-6:-3], self.path[-3:]
             print(json.dumps(self.controller_exchange.get_one_data(base_currency, target_currency), ensure_ascii=False,
                              indent=4))
+        elif self.path.startswith(Addresses.currency_calculation):  # Расчёт кол-ва средств из одной валюты в другую.
+            print(simplejson.dumps(self.controller_exchange.get_currency_calculation(self.path), ensure_ascii=False,
+                                   indent=4))
         self.send_response(200)
         self.send_header('Content-type', 'text/html')
         self.end_headers()

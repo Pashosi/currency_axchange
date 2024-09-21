@@ -19,3 +19,8 @@ class Addresses:
     # POST обновление существующего в базе обменного курса
     exchangeRate: str = '/exchangeRate/'
 
+    # GET Расчёт перевода определённого количества средств из одной валюты в другую.
+    currency_calculation: str = '/exchange?'
+
+
+
