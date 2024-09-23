@@ -3,7 +3,6 @@ from dataclasses import dataclass
 
 @dataclass
 class Addresses:
-
     # GET Получение списка валют или в случае c
     # POST добавление новой валюты в базу
     currencies: str = '/currencies'
@@ -21,6 +20,3 @@ class Addresses:
 
     # GET Расчёт перевода определённого количества средств из одной валюты в другую.
     currency_calculation: str = '/exchange?'
-
-
-

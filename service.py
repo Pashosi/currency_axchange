@@ -10,15 +10,22 @@ class ExchangeCurrencyCalculation:
         self.model_currency = Currencies('database.db')
 
     def get_currency_calculation(self, dto: DTOExchangeCurrencyCalculationGET):
+        if rate := self.model_exchange.get_exchange_rate(dto.baseCurrency.code, dto.targetCurrency.code):
+            dto.rate = rate[0]
+            dto.converted = (Decimal(dto.rate) * Decimal(dto.amount)).quantize(Decimal('.01'), rounding=ROUND_DOWN)
+        elif rate := self.model_exchange.get_exchange_rate(dto.targetCurrency.code, dto.baseCurrency.code):
+            dto.rate = (Decimal('1') / Decimal(rate[0])).quantize(Decimal('.01'), rounding=ROUND_DOWN)
+            dto.converted = (Decimal(dto.rate) * Decimal(dto.amount)).quantize(Decimal('.01'), rounding=ROUND_DOWN)
+        elif base_rate_usd := self.model_exchange.get_exchange_rate(dto.baseCurrency.code, 'USD'):
+            if target_rat_usd := self.model_exchange.get_exchange_rate('USD', dto.targetCurrency.code):
+                dto.rate = (Decimal(base_rate_usd[0]) * Decimal(target_rat_usd[0])).quantize(Decimal('.01'), rounding=ROUND_DOWN)
+                dto.converted = (Decimal(dto.rate) * Decimal(dto.amount)).quantize(Decimal('.01'), rounding=ROUND_DOWN)
+
         get_base_data = self.get_currency_for_dto(dto.baseCurrency.code)
         get_target_data = self.get_currency_for_dto(dto.targetCurrency.code)
 
         self.add_data_on_dto(dto.baseCurrency, get_base_data)
         self.add_data_on_dto(dto.targetCurrency, get_target_data)
-
-        rate = self.model_exchange.get_exchange_rate(dto)
-        dto.rate = rate
-        dto.converted = (Decimal(dto.rate) * Decimal(dto.amount)).quantize(Decimal('.01'), rounding=ROUND_DOWN)
         return dto
 
     def get_currency_for_dto(self, code: str):

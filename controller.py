@@ -1,5 +1,3 @@
-
-
 from DTO import DTOCurrencyGet, DTOCurrencyPOST, DTOExchangeRatesGET, DTOExchangeRatesPOST, DTOExchangeRatesPUTCH, \
     DTOExchangeCurrencyCalculationGET
 from models import Currencies, ExchangeRates

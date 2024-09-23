@@ -1,7 +1,7 @@
-import json
 import sqlite3
 
-from DTO import DTOCurrencyPOST, DTOExchangeRatesPOST, DTOExchangeRatesPUTCH, DTOExchangeCurrencyCalculationGET
+from DTO import DTOCurrencyPOST, DTOExchangeRatesPOST, DTOExchangeRatesPUTCH
+from excepions import DatabaseUnavailable
 
 
 class Currencies:
@@ -17,13 +17,16 @@ class Currencies:
             return dict(results)
 
     def get_all_data(self):
-        with sqlite3.connect(self.db_name) as connection:
-            connection.row_factory = sqlite3.Row
-            cursor = connection.cursor()
-            cursor.execute(f'SELECT * FROM Currencies')
-            results = cursor.fetchall()
-            results = list(map(lambda x: dict(x), results))
-            return results
+        try:
+            with sqlite3.connect(self.db_name) as connection:
+                connection.row_factory = sqlite3.Row
+                cursor = connection.cursor()
+                cursor.execute(f'SELECT * FROM Currencies')
+                results = cursor.fetchall()
+                results = list(map(lambda x: dict(x), results))
+                return results
+        except Exception as ex:
+            raise DatabaseUnavailable()
 
     def add_one_data(self, dto: DTOCurrencyPOST):
         with sqlite3.connect(self.db_name) as connection:
@@ -98,7 +101,7 @@ class ExchangeRates:
         with sqlite3.connect(self.db_name) as connection:
             cursor = connection.cursor()
             sql = """SELECT id FROM Currencies WHERE Code = (?)
-                      UNION 
+                      UNION ALL
                      SELECT id FROM Currencies WHERE Code = (?)"""
             cursor.execute(sql, (dto.baseCurrency, dto.targetCurrency))
             num_base, num_target = cursor.fetchall()
@@ -108,17 +111,21 @@ class ExchangeRates:
                         AND TargetCurrencyId = (?)"""
             cursor.execute(sql, (dto.rate, num_base[0], num_target[0]))
 
-    def get_exchange_rate(self, dto: DTOExchangeCurrencyCalculationGET):
+    def get_exchange_rate(self, base_currency: str, target_currency: str):
         with sqlite3.connect(self.db_name) as connection:
             cursor = connection.cursor()
-            sql = """SELECT id FROM Currencies WHERE Code = (?)
-                      UNION 
-                     SELECT id FROM Currencies WHERE Code = (?)"""
-            cursor.execute(sql, (dto.baseCurrency.code, dto.targetCurrency.code))
-            num_base, num_target = cursor.fetchall()
+            num_base, num_target = self.get_id_currencies(cursor, base_currency, target_currency)
             sql = """SELECT Rate FROM ExchangeRates
                       WHERE BaseCurrencyId = (?)
                         AND TargetCurrencyId = (?)"""
             cursor.execute(sql, (num_base[0], num_target[0]))
             rate = cursor.fetchone()
-            return rate[0]
+            return rate
+
+    def get_id_currencies(self, cursor, base_currency, target_currency):
+        """Получение id-шников по заданным содам валют"""
+        sql = """SELECT id FROM Currencies WHERE Code = (?)
+                  UNION ALL
+                 SELECT id FROM Currencies WHERE Code = (?)"""
+        cursor.execute(sql, (base_currency, target_currency))
+        return cursor.fetchall()
