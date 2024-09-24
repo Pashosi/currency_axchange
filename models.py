@@ -1,7 +1,7 @@
 import sqlite3
 
 from DTO import DTOCurrencyPOST, DTOExchangeRatesPOST, DTOExchangeRatesPUTCH
-from excepions import DatabaseUnavailable
+from exceptons import DatabaseUnavailableError, CurrencyNotFoundError
 
 
 class Currencies:
@@ -9,12 +9,17 @@ class Currencies:
         self.db_name = db_name
 
     def get_one_data(self, code: str):
-        with sqlite3.connect(self.db_name) as connection:
-            connection.row_factory = sqlite3.Row
-            cursor = connection.cursor()
-            cursor.execute(f'SELECT * FROM Currencies WHERE Code = "{code}"')
-            results = cursor.fetchone()
-            return dict(results)
+        try:
+            with sqlite3.connect(self.db_name) as connection:
+                connection.row_factory = sqlite3.Row
+                cursor = connection.cursor()
+                cursor.execute(f'SELECT * FROM Currencies WHERE Code = "{code}"')
+                if results := cursor.fetchone():
+                    return dict(results)
+                else:
+                    raise CurrencyNotFoundError()
+        except Exception as ex:
+            raise DatabaseUnavailableError()
 
     def get_all_data(self):
         try:
@@ -26,7 +31,7 @@ class Currencies:
                 results = list(map(lambda x: dict(x), results))
                 return results
         except Exception as ex:
-            raise DatabaseUnavailable()
+            raise DatabaseUnavailableError()
 
     def add_one_data(self, dto: DTOCurrencyPOST):
         with sqlite3.connect(self.db_name) as connection:
@@ -41,25 +46,28 @@ class ExchangeRates:
         self.db_name = db_name
 
     def get_all_data(self) -> list:
-        with sqlite3.connect(self.db_name) as connection:
-            cursor = connection.cursor()
-            cursor.execute("""SELECT ex.ID,
-                                    ex.Rate,
-                                    crs.ID,
-                                    crs.Code,
-                                    crs.FullName,
-                                    crs.Sign,
-                                    cr.ID,
-                                    cr.Code,
-                                    cr.FullName,
-                                    cr.Sign
-                                FROM ExchangeRates ex
-                                JOIN Currencies crs
-                                  ON crs.id = ex.BaseCurrencyId
-                                JOIN Currencies cr
-                                  ON cr.id = ex.TargetCurrencyId""")
-            results = cursor.fetchall()
-            return results
+        try:
+            with sqlite3.connect(self.db_name) as connection:
+                cursor = connection.cursor()
+                cursor.execute("""SELECT ex.ID,
+                                        ex.Rate,
+                                        crs.ID,
+                                        crs.Code,
+                                        crs.FullName,
+                                        crs.Sign,
+                                        cr.ID,
+                                        cr.Code,
+                                        cr.FullName,
+                                        cr.Sign
+                                    FROM ExchangeRates ex
+                                    JOIN Currencies crs
+                                      ON crs.id = ex.BaseCurrencyId
+                                    JOIN Currencies cr
+                                      ON cr.id = ex.TargetCurrencyId""")
+                results = cursor.fetchall()
+                return results
+        except Exception as ex:
+            raise DatabaseUnavailableError()
 
     def get_one_data(self, base_currency, target_currency):
         with sqlite3.connect(self.db_name) as connection:
