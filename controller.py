@@ -1,6 +1,6 @@
 from DTO import DTOCurrencyGet, DTOCurrencyPOST, DTOExchangeRatesGET, DTOExchangeRatesPOST, DTOExchangeRatesPUTCH, \
     DTOExchangeCurrencyCalculationGET
-from exceptons import CurrenciesCodesMissingInPathError
+from exceptons import CurrenciesCodesMissingInPathError, CurrencyCodeMissingInPathError
 from models import Currencies, ExchangeRates
 from urllib.parse import urlparse, parse_qs
 from decimal import Decimal, ROUND_DOWN
@@ -13,12 +13,15 @@ class ControllerCurrency:
         self.model = Currencies('database.db')
         super().__init__(*args, **kwargs)
 
-    def get_one_data(self, currency):
-        result = self.model.get_one_data(currency)
+    def get_one_data(self, path):
+        curr = path.split('/')[-1]
+        if len(curr) < 3:
+            raise CurrencyCodeMissingInPathError()
+        result = self.model.get_one_data(curr)
         return DTOCurrencyGet(id=result['id'],
                               name=result['FullName'],
                               code=result['Code'],
-                              sign=result['Sign'])
+                              sign=result['Sign']).to_dict()
 
     def get_all_data(self):
         all_data = self.model.get_all_data()
@@ -51,7 +54,8 @@ class ControllerExchangeRates:
             ).to_dict())
         return result
 
-    def get_one_data(self, currency_pair: str):
+    def get_one_data(self, path: str):
+        currency_pair = path.split('/')[-1]
         if len(currency_pair) < 6:
             raise CurrenciesCodesMissingInPathError()
         base_currency, target_currency = currency_pair[-6:-3], currency_pair[-3:]

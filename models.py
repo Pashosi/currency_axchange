@@ -97,7 +97,7 @@ class ExchangeRates:
         with sqlite3.connect(self.db_name) as connection:
             cursor = connection.cursor()
             sql = """SELECT id FROM Currencies WHERE Code = (?)
-                      UNION 
+                      UNION ALL
                      SELECT id FROM Currencies WHERE Code = (?)"""
             cursor.execute(sql, (dto.baseCurrency, dto.targetCurrency))
             num_base, num_target = cursor.fetchall()
