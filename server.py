@@ -89,10 +89,18 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
     def send_json_response(self, code: int, message: json):
         self.send_response(code)
+        self.send_header('Access-Control-Allow-Origin', '*')  # Разрешить запросы от всех источников
         self.send_header('Content-type', 'application/json')
         self.end_headers()
         print(message)
         self.wfile.write(message.encode('utf-8'))
+
+    def do_OPTIONS(self):
+        self.send_response(200, "ok")
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.end_headers()
 
 
 def run(server_class=HTTPServer, handler_class=SimpleHTTPRequestHandler, port=8000):
