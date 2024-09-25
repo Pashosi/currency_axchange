@@ -11,7 +11,7 @@ class CurrencyCodeMissingInPathError(Exception):
 
 
 class CurrenciesCodesMissingInPathError(Exception):
-    def __init__(self, message='Коды валют пары отсутствуют в адресе'):
+    def __init__(self, message='Коды валютной пары отсутствуют в адресе'):
         self.message = message
         super().__init__(self.message)
 
@@ -23,6 +23,12 @@ class CurrencyNotFoundError(Exception):
 
 
 class CurrencyDuplicationError(Exception):
+    def __init__(self, message='Валюта с таким кодом уже существует'):
+        self.message = message
+        super().__init__(self.message)
+
+
+class CurrencyNotExistError(Exception):
     def __init__(self, message='Валюта с таким кодом уже существует'):
         self.message = message
         super().__init__(self.message)

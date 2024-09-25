@@ -1,7 +1,7 @@
 import sqlite3
 
 from DTO import DTOCurrencyPOST, DTOExchangeRatesPOST, DTOExchangeRatesPUTCH
-from exceptons import DatabaseUnavailableError, CurrencyNotFoundError, CurrencyDuplicationError
+from exceptons import DatabaseUnavailableError, CurrencyNotFoundError, CurrencyDuplicationError, CurrencyNotExistError
 
 
 class Currencies:
@@ -99,30 +99,50 @@ class ExchangeRates:
             return results
 
     def add_one_data(self, dto: DTOExchangeRatesPOST):
-        with sqlite3.connect(self.db_name) as connection:
-            cursor = connection.cursor()
-            sql = """SELECT id FROM Currencies WHERE Code = (?)
-                      UNION ALL
-                     SELECT id FROM Currencies WHERE Code = (?)"""
-            cursor.execute(sql, (dto.baseCurrency, dto.targetCurrency))
-            num_base, num_target = cursor.fetchall()
-            sql = """INSERT INTO ExchangeRates (BaseCurrencyId, TargetCurrencyId, Rate)
-                        VALUES (?, ?, ?)"""
-            cursor.execute(sql, (num_base[0], num_target[0], dto.rate))
+        try:
+            with sqlite3.connect(self.db_name) as connection:
+                cursor = connection.cursor()
+                # Запрос на поиск id каждой валюты
+                sql = """SELECT id FROM Currencies WHERE Code = (?)
+                          UNION ALL
+                         SELECT id FROM Currencies WHERE Code = (?)"""
+                cursor.execute(sql, (dto.baseCurrency, dto.targetCurrency))
+                numbers_currencies = cursor.fetchall()
+                if len(numbers_currencies) < 2:
+                    raise CurrencyNotExistError(message='Одна (или обе) валюта из валютной пары не существует в БД')
+                num_base, num_target = numbers_currencies
+                # Проверка на наличие повторяющихся валют
+                sql = '''SELECT * FROM ExchangeRates 
+                                    WHERE BaseCurrencyId=(?) 
+                                    AND TargetCurrencyId=(?)'''
+                if cursor.execute(sql, (num_base[0], num_target[0])).fetchone():
+                    raise CurrencyDuplicationError(message='Валютная пара с таким кодом уже существует')
+                # вставка валютной пары и курса
+                sql = """INSERT INTO ExchangeRates (BaseCurrencyId, TargetCurrencyId, Rate)
+                            VALUES (?, ?, ?)"""
+                cursor.execute(sql, (num_base[0], num_target[0], dto.rate))
+        except sqlite3.DatabaseError:
+            raise DatabaseUnavailableError()
 
     def update_one_data(self, dto: DTOExchangeRatesPUTCH):
-        with sqlite3.connect(self.db_name) as connection:
-            cursor = connection.cursor()
-            sql = """SELECT id FROM Currencies WHERE Code = (?)
-                      UNION ALL
-                     SELECT id FROM Currencies WHERE Code = (?)"""
-            cursor.execute(sql, (dto.baseCurrency, dto.targetCurrency))
-            num_base, num_target = cursor.fetchall()
-            sql = """UPDATE ExchangeRates 
-                        SET Rate = (?)
-                      WHERE BaseCurrencyId = (?)
-                        AND TargetCurrencyId = (?)"""
-            cursor.execute(sql, (dto.rate, num_base[0], num_target[0]))
+        try:
+            with sqlite3.connect(self.db_name) as connection:
+                cursor = connection.cursor()
+                sql = """SELECT id FROM Currencies WHERE Code = (?)
+                          UNION ALL
+                         SELECT id FROM Currencies WHERE Code = (?)"""
+                cursor.execute(sql, (dto.baseCurrency, dto.targetCurrency))
+                numbers_currencies = cursor.fetchall()
+                if len(numbers_currencies) < 2:
+                    raise CurrencyNotExistError(message='Валютная пара отсутствует в базе данных')
+                num_base, num_target = numbers_currencies
+                sql = """UPDATE ExchangeRate 
+                            SET Rate = (?)
+                          WHERE BaseCurrencyId = (?)
+                            AND TargetCurrencyId = (?)"""
+                cursor.execute(sql, (dto.rate, num_base[0], num_target[0]))
+        except sqlite3.DatabaseError:
+            raise DatabaseUnavailableError()
 
     def get_exchange_rate(self, base_currency: str, target_currency: str):
         with sqlite3.connect(self.db_name) as connection:

@@ -1,6 +1,6 @@
 from DTO import DTOCurrencyGet, DTOCurrencyPOST, DTOExchangeRatesGET, DTOExchangeRatesPOST, DTOExchangeRatesPUTCH, \
     DTOExchangeCurrencyCalculationGET
-from exceptons import CurrenciesCodesMissingInPathError, CurrencyCodeMissingInPathError
+from exceptons import CurrenciesCodesMissingInPathError, CurrencyCodeMissingInPathError, CurrencyNotExistError
 from models import Currencies, ExchangeRates
 from urllib.parse import urlparse, parse_qs
 from decimal import Decimal, ROUND_DOWN
@@ -70,6 +70,8 @@ class ControllerExchangeRates:
         ).to_dict()
 
     def add_one_data(self, data: dict):
+        if len(data['baseCurrencyCode']) < 3 or len(data['targetCurrencyCode']) < 3:
+            raise CurrenciesCodesMissingInPathError()
         self.model.add_one_data(
             DTOExchangeRatesPOST(
                 baseCurrency=data['baseCurrencyCode'],
@@ -79,12 +81,22 @@ class ControllerExchangeRates:
         )
 
     def update_one_data(self, path: str, data: dict):
+        currency_pair = path.split('/')[-1]
+        if len(currency_pair) < 6:
+            raise CurrenciesCodesMissingInPathError()
         base_currency, target_currency = path[-6:-3], path[-3:]
         self.model.update_one_data(DTOExchangeRatesPUTCH(
             baseCurrency=base_currency,
             targetCurrency=target_currency,
             rate=data['rate']
         ))
+        data = self.model.get_one_data(base_currency, target_currency)
+        return DTOExchangeRatesGET(
+            id=data[0],
+            baseCurrency=DTOCurrencyGet(data[2], data[3], data[4], data[5]),
+            targetCurrency=DTOCurrencyGet(data[6], data[7], data[8], data[9]),
+            rate=data[1]
+        ).to_dict()
 
     def get_currency_calculation(self, path: str):
         parse = urlparse(path)
