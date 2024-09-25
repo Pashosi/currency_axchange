@@ -4,7 +4,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from controller import ControllerCurrency, ControllerExchangeRates
 from config import Addresses
 from exceptons import DatabaseUnavailableError, CurrencyCodeMissingInPathError, CurrencyNotFoundError, \
-    CurrenciesCodesMissingInPathError
+    CurrenciesCodesMissingInPathError, CurrencyDuplicationError
 
 
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
@@ -29,12 +29,19 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         super().__init__(*args, **kwargs)
 
     def do_POST(self):
-        content_length = int(self.headers['Content-Length'])
-        post_data = self.rfile.read(content_length)  # Тело запроса
-        data = json.loads(post_data)
-        result = self.get_controller(self.path, self.command, data)
-        result = json.dumps(result, ensure_ascii=False)
-        self.send_json_response(201, result)
+        try:
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length)  # Тело запроса
+            data = json.loads(post_data)
+            result = self.get_controller(self.path, self.command, data)
+            result = json.dumps(result, ensure_ascii=False)
+            self.send_json_response(201, result)
+        except CurrencyCodeMissingInPathError as ex:
+            self.send_json_response(400, json.dumps({'message': ex.message}, ensure_ascii=False))
+        except CurrencyDuplicationError as ex:
+            self.send_json_response(409, json.dumps({'message': ex.message}, ensure_ascii=False))
+        except DatabaseUnavailableError as ex:
+            self.send_json_response(500, json.dumps({'message': ex.message}, ensure_ascii=False))
         # if self.path == Addresses.currencies:  # добавление новой валюты в базу
         #     data = self.controller_currency.add_one_data(data)
         # elif self.path == Addresses.exchangeRates:  # добавление нового обменного курса в базу

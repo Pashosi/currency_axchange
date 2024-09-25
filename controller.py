@@ -31,6 +31,8 @@ class ControllerCurrency:
                                sign=currency['Sign']).to_dict() for currency in all_data]
 
     def add_one_data(self, data: dict):
+        if not data['name'] or not data['code'] or not data['sign']:
+            raise CurrencyCodeMissingInPathError(message='Отсутствует нужное поле формы')
         dto = DTOCurrencyPOST(name=data['name'],
                               code=data['code'],
                               sign=data['sign'])

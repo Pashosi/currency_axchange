@@ -20,3 +20,9 @@ class CurrencyNotFoundError(Exception):
     def __init__(self, message='Валюта не найдена'):
         self.message = message
         super().__init__(self.message)
+
+
+class CurrencyDuplicationError(Exception):
+    def __init__(self, message='Валюта с таким кодом уже существует'):
+        self.message = message
+        super().__init__(self.message)

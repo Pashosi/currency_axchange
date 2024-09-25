@@ -1,7 +1,7 @@
 import sqlite3
 
 from DTO import DTOCurrencyPOST, DTOExchangeRatesPOST, DTOExchangeRatesPUTCH
-from exceptons import DatabaseUnavailableError, CurrencyNotFoundError
+from exceptons import DatabaseUnavailableError, CurrencyNotFoundError, CurrencyDuplicationError
 
 
 class Currencies:
@@ -18,7 +18,7 @@ class Currencies:
                     return dict(results)
                 else:
                     raise CurrencyNotFoundError()
-        except Exception as ex:
+        except sqlite3.DatabaseError:
             raise DatabaseUnavailableError()
 
     def get_all_data(self):
@@ -30,15 +30,20 @@ class Currencies:
                 results = cursor.fetchall()
                 results = list(map(lambda x: dict(x), results))
                 return results
-        except Exception as ex:
+        except sqlite3.DatabaseError:
             raise DatabaseUnavailableError()
 
     def add_one_data(self, dto: DTOCurrencyPOST):
-        with sqlite3.connect(self.db_name) as connection:
-            connection.row_factory = sqlite3.Row
-            cursor = connection.cursor()
-            cursor.execute(f'INSERT INTO Currencies (FullName, Code, Sign) VALUES (?, ?, ?)',
-                           (dto.name, dto.code, dto.sign))
+        try:
+            with sqlite3.connect(self.db_name) as connection:
+                connection.row_factory = sqlite3.Row
+                cursor = connection.cursor()
+                if cursor.execute(f'SELECT * FROM Currencies WHERE Code = "{dto.code}"').fetchone():
+                    raise CurrencyDuplicationError()
+                cursor.execute(f'INSERT INTO Currencies (FullName, Code, Sign) VALUES (?, ?, ?)',
+                               (dto.name, dto.code, dto.sign))
+        except sqlite3.DatabaseError:
+            raise DatabaseUnavailableError()
 
 
 class ExchangeRates:
@@ -66,7 +71,7 @@ class ExchangeRates:
                                       ON cr.id = ex.TargetCurrencyId""")
                 results = cursor.fetchall()
                 return results
-        except Exception as ex:
+        except sqlite3.DatabaseError:
             raise DatabaseUnavailableError()
 
     def get_one_data(self, base_currency, target_currency):
