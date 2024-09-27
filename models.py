@@ -136,7 +136,7 @@ class ExchangeRates:
                 if len(numbers_currencies) < 2:
                     raise CurrencyNotExistError(message='Валютная пара отсутствует в базе данных')
                 num_base, num_target = numbers_currencies
-                sql = """UPDATE ExchangeRate 
+                sql = """UPDATE ExchangeRates 
                             SET Rate = (?)
                           WHERE BaseCurrencyId = (?)
                             AND TargetCurrencyId = (?)"""

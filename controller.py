@@ -49,8 +49,8 @@ class ControllerExchangeRates:
         for data in self.model.get_all_data():
             result.append(DTOExchangeRatesGET(
                 id=data[0],
-                baseCurrency=DTOCurrencyGet(data[2], data[3], data[4], data[5]),
-                targetCurrency=DTOCurrencyGet(data[6], data[7], data[8], data[9]),
+                baseCurrency=DTOCurrencyGet(id=data[2], code=data[3], name=data[4], sign=data[5]),
+                targetCurrency=DTOCurrencyGet(id=data[6], code=data[7], name=data[8], sign=data[9]),
                 rate=data[1]
             ).to_dict())
         return result
@@ -63,8 +63,8 @@ class ControllerExchangeRates:
         data = self.model.get_one_data(base_currency, target_currency)
         return DTOExchangeRatesGET(
             id=data[0],
-            baseCurrency=DTOCurrencyGet(data[2], data[3], data[4], data[5]),
-            targetCurrency=DTOCurrencyGet(data[6], data[7], data[8], data[9]),
+            baseCurrency=DTOCurrencyGet(id=data[2], code=data[3], name=data[4], sign=data[5]),
+            targetCurrency=DTOCurrencyGet(id=data[6], code=data[7], name=data[8], sign=data[9]),
             rate=data[1]
         ).to_dict()
 
@@ -87,13 +87,13 @@ class ControllerExchangeRates:
         self.model.update_one_data(DTOExchangeRatesPUTCH(
             baseCurrency=base_currency,
             targetCurrency=target_currency,
-            rate=data['rate']
+            rate=data['rate'][0]
         ))
         data = self.model.get_one_data(base_currency, target_currency)
         return DTOExchangeRatesGET(
             id=data[0],
-            baseCurrency=DTOCurrencyGet(data[2], data[3], data[4], data[5]),
-            targetCurrency=DTOCurrencyGet(data[6], data[7], data[8], data[9]),
+            baseCurrency=DTOCurrencyGet(id=data[2], code=data[3], name=data[4], sign=data[5]),
+            targetCurrency=DTOCurrencyGet(id=data[6], code=data[7], name=data[8], sign=data[9]),
             rate=data[1]
         ).to_dict()
 
