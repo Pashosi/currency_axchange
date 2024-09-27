@@ -13,11 +13,10 @@ class ControllerCurrency:
         self.model = Currencies('database.db')
         super().__init__(*args, **kwargs)
 
-    def get_one_data(self, path):
-        curr = path.split('/')[-1]
-        if len(curr) < 3:
+    def get_one_data(self, currency: str):
+        if len(currency) < 3:
             raise CurrencyCodeMissingInPathError()
-        result = self.model.get_one_data(curr)
+        result = self.model.get_one_data(currency)
         return DTOCurrencyGet(id=result['id'],
                               name=result['FullName'],
                               code=result['Code'],
@@ -70,13 +69,13 @@ class ControllerExchangeRates:
         ).to_dict()
 
     def add_one_data(self, data: dict):
-        if len(data['baseCurrencyCode']) < 3 or len(data['targetCurrencyCode']) < 3:
+        if len(data['baseCurrencyCode'][0]) < 3 or len(data['targetCurrencyCode'][0]) < 3:
             raise CurrenciesCodesMissingInPathError()
         self.model.add_one_data(
             DTOExchangeRatesPOST(
-                baseCurrency=data['baseCurrencyCode'],
-                targetCurrency=data['targetCurrencyCode'],
-                rate=data['rate']
+                baseCurrency=data['baseCurrencyCode'][0],
+                targetCurrency=data['targetCurrencyCode'][0],
+                rate=data['rate'][0]
             )
         )
 
@@ -101,7 +100,6 @@ class ControllerExchangeRates:
     def get_currency_calculation(self, path: str):
         parse = urlparse(path)
         pars_dict = parse_qs(parse.query)
-        # {'amount': ['10'], 'from': ['USD'], 'to': ['AUD']}
         calculated_currency = self.service.get_currency_calculation(DTOExchangeCurrencyCalculationGET(
             baseCurrency=DTOCurrencyGet(code=pars_dict['from'][0]),
             targetCurrency=DTOCurrencyGet(code=pars_dict['to'][0]),

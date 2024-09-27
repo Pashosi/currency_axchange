@@ -38,10 +38,10 @@ class Currencies:
             with sqlite3.connect(self.db_name) as connection:
                 connection.row_factory = sqlite3.Row
                 cursor = connection.cursor()
-                if cursor.execute(f'SELECT * FROM Currencies WHERE Code = "{dto.code}"').fetchone():
+                if cursor.execute(f'SELECT * FROM Currencies WHERE Code = "{dto.code[0]}"').fetchone():
                     raise CurrencyDuplicationError()
                 cursor.execute(f'INSERT INTO Currencies (FullName, Code, Sign) VALUES (?, ?, ?)',
-                               (dto.name, dto.code, dto.sign))
+                               (dto.name[0], dto.code[0], dto.sign[0]))
         except sqlite3.DatabaseError:
             raise DatabaseUnavailableError()
 

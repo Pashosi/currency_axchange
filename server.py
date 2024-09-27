@@ -1,4 +1,6 @@
 import json
+import simplejson
+from urllib.parse import urlparse, parse_qs
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 from controller import ControllerCurrency, ControllerExchangeRates
@@ -12,7 +14,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         try:
             result = self.get_controller(self.path, self.command)
-            result = json.dumps(result, ensure_ascii=False)
+            result = simplejson.dumps(result, ensure_ascii=False, use_decimal=True)
             self.send_json_response(200, result)
         except DatabaseUnavailableError as ex:
             self.send_json_response(500, json.dumps({'message': ex.message}, ensure_ascii=False))
@@ -32,7 +34,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         try:
             content_length = int(self.headers['Content-Length'])
             post_data = self.rfile.read(content_length)  # Тело запроса
-            data = json.loads(post_data)
+            data = parse_qs(post_data.decode('utf-8'))
             result = self.get_controller(self.path, self.command, data)
             result = json.dumps(result, ensure_ascii=False)
             self.send_json_response(201, result)
@@ -50,8 +52,11 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
     def do_PATCH(self):
         try:
             content_length = int(self.headers['Content-Length'])
-            post_data = self.rfile.read(content_length)  # Тело запроса
-            data = json.loads(post_data)
+            post_data = self.rfile.read(content_length).decode("utf-8")  # Тело запроса
+            data = parse_qs(post_data)
+            # parsed_url = urlparse(self.path)
+            # parts = parsed_url.path.split("/")
+            # query_params = parse_qs(parsed_url.query)
 
             result = self.get_controller(self.path, self.command, data)
             result = json.dumps(result, ensure_ascii=False)
@@ -78,11 +83,11 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         elif command == 'POST':
             if self.path == Addresses.currencies:  # добавление новой валюты в базу
                 self.controller_currency.add_one_data(data)
-                return self.controller_currency.get_one_data('/' + data['code'])
+                return self.controller_currency.get_one_data(data['code'][0])
             elif self.path == Addresses.exchangeRates:  # добавление нового обменного курса в базу
                 self.controller_exchange.add_one_data(data)
                 return self.controller_exchange.get_one_data(
-                    '/' + data['baseCurrencyCode'] + data['targetCurrencyCode'])
+                    '/' + data['baseCurrencyCode'][0] + data['targetCurrencyCode'][0])
         elif command == 'PATCH':
             if self.path.startswith(Addresses.exchangeRate):
                 return self.controller_exchange.update_one_data(self.path, data)
@@ -103,7 +108,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
 
-def run(server_class=HTTPServer, handler_class=SimpleHTTPRequestHandler, port=8000):
+def run(server_class=HTTPServer, handler_class=SimpleHTTPRequestHandler, port=8080):
     server_address = ('', port)
     httpd = server_class(server_address, handler_class)
     print(f"Starting httpd server on port {port}")
