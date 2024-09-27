@@ -16,10 +16,14 @@ class ExchangeCurrencyCalculation:
         elif rate := self.model_exchange.get_exchange_rate(dto.targetCurrency.code, dto.baseCurrency.code):
             dto.rate = (Decimal('1') / Decimal(rate[0])).quantize(Decimal('.01'), rounding=ROUND_DOWN)
             dto.converted = (Decimal(dto.rate) * Decimal(dto.amount)).quantize(Decimal('.01'), rounding=ROUND_DOWN)
-        elif base_rate_usd := self.model_exchange.get_exchange_rate(dto.baseCurrency.code, 'USD'):
-            if target_rat_usd := self.model_exchange.get_exchange_rate('USD', dto.targetCurrency.code):
-                dto.rate = (Decimal(base_rate_usd[0]) * Decimal(target_rat_usd[0])).quantize(Decimal('.01'), rounding=ROUND_DOWN)
-                dto.converted = (Decimal(dto.rate) * Decimal(dto.amount)).quantize(Decimal('.01'), rounding=ROUND_DOWN)
+        elif self.model_exchange.get_exchange_rate('USD',
+                                                   dto.baseCurrency.code) or self.model_exchange.get_exchange_rate(
+                'USD', dto.targetCurrency.code):
+            base_rate_usd = self.model_exchange.get_exchange_rate('USD', dto.baseCurrency.code)
+            target_rat_usd = self.model_exchange.get_exchange_rate('USD', dto.targetCurrency.code)
+            dto.rate = (Decimal(base_rate_usd[0]) * Decimal(target_rat_usd[0])).quantize(Decimal('.01'),
+                                                                                         rounding=ROUND_DOWN)
+            dto.converted = (Decimal(dto.rate) * Decimal(dto.amount)).quantize(Decimal('.01'), rounding=ROUND_DOWN)
 
         get_base_data = self.get_currency_for_dto(dto.baseCurrency.code)
         get_target_data = self.get_currency_for_dto(dto.targetCurrency.code)
