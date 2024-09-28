@@ -1,6 +1,7 @@
 from DTO import DTOCurrencyGet, DTOCurrencyPOST, DTOExchangeRatesGET, DTOExchangeRatesPOST, DTOExchangeRatesPUTCH, \
     DTOExchangeCurrencyCalculationGET
-from exceptons import CurrenciesCodesMissingInPathError, CurrencyCodeMissingInPathError, CurrencyNotExistError
+from config import Addresses
+from exceptons import CurrenciesCodesMissingInPathError, CurrencyCodeMissingInPathError
 from models import Currencies, ExchangeRates
 from urllib.parse import urlparse, parse_qs
 from decimal import Decimal, ROUND_DOWN
@@ -10,7 +11,7 @@ from service import ExchangeCurrencyCalculation
 
 class ControllerCurrency:
     def __init__(self, *args, **kwargs):
-        self.model = Currencies('database.db')
+        self.model = Currencies(Addresses.db_name)
         super().__init__(*args, **kwargs)
 
     def get_one_data(self, currency: str):
@@ -40,7 +41,7 @@ class ControllerCurrency:
 
 class ControllerExchangeRates:
     def __init__(self, *args, **kwargs):
-        self.model = ExchangeRates('database.db')
+        self.model = ExchangeRates(Addresses.db_name)
         self.service = ExchangeCurrencyCalculation()
         super().__init__(*args, **kwargs)
 

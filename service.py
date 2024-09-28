@@ -1,13 +1,14 @@
 from decimal import Decimal, ROUND_DOWN
 
 from DTO import DTOExchangeCurrencyCalculationGET, DTOCurrencyGet
+from config import Addresses
 from models import ExchangeRates, Currencies
 
 
 class ExchangeCurrencyCalculation:
     def __init__(self):
-        self.model_exchange = ExchangeRates('database.db')
-        self.model_currency = Currencies('database.db')
+        self.model_exchange = ExchangeRates(Addresses.db_name)
+        self.model_currency = Currencies(Addresses.db_name)
 
     def get_currency_calculation(self, dto: DTOExchangeCurrencyCalculationGET):
         if rate := self.model_exchange.get_exchange_rate(dto.baseCurrency.code, dto.targetCurrency.code):

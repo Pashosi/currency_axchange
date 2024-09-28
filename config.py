@@ -21,3 +21,5 @@ class Addresses:
 
     # GET Расчёт перевода определённого количества средств из одной валюты в другую.
     currency_calculation: str = '/exchange?'
+
+    db_name = 'database.db'

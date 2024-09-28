@@ -54,9 +54,6 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             content_length = int(self.headers['Content-Length'])
             post_data = self.rfile.read(content_length).decode("utf-8")  # Тело запроса
             data = parse_qs(post_data)
-            # parsed_url = urlparse(self.path)
-            # parts = parsed_url.path.split("/")
-            # query_params = parse_qs(parsed_url.query)
 
             result = self.get_controller(self.path, self.command, data)
             result = json.dumps(result, ensure_ascii=False)
