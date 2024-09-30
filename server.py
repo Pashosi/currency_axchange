@@ -93,7 +93,6 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         self.send_header('Access-Control-Allow-Origin', '*')  # Разрешить запросы от всех источников
         self.send_header('Content-type', 'application/json')
         self.end_headers()
-        print(message)
         self.wfile.write(message.encode('utf-8'))
 
     def do_OPTIONS(self):
