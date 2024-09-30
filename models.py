@@ -112,9 +112,10 @@ class ExchangeRates:
                     raise CurrencyNotExistError(message='Одна (или обе) валюта из валютной пары не существует в БД')
                 num_base, num_target = numbers_currencies
                 # Проверка на наличие повторяющихся валют
-                sql = '''SELECT * FROM ExchangeRates 
-                                    WHERE BaseCurrencyId=(?) 
-                                    AND TargetCurrencyId=(?)'''
+                sql = '''SELECT * 
+                           FROM ExchangeRates 
+                          WHERE BaseCurrencyId=(?) 
+                            AND TargetCurrencyId=(?)'''
                 if cursor.execute(sql, (num_base[0], num_target[0])).fetchone():
                     raise CurrencyDuplicationError(message='Валютная пара с таким кодом уже существует')
                 # вставка валютной пары и курса

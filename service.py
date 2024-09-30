@@ -11,12 +11,21 @@ class ExchangeCurrencyCalculation:
         self.model_currency = Currencies(Addresses.db_name)
 
     def get_currency_calculation(self, dto: DTOExchangeCurrencyCalculationGET):
+        """
+        Варианты обработки курсов:
+        -прямой
+        -обратный
+        -кросс-курс
+        """
+        # Прямой курс
         if rate := self.model_exchange.get_exchange_rate(dto.baseCurrency.code, dto.targetCurrency.code):
             dto.rate = rate[0]
             dto.converted = (Decimal(dto.rate) * Decimal(dto.amount)).quantize(Decimal('.01'), rounding=ROUND_DOWN)
+        # Обратный
         elif rate := self.model_exchange.get_exchange_rate(dto.targetCurrency.code, dto.baseCurrency.code):
             dto.rate = (Decimal('1') / Decimal(rate[0])).quantize(Decimal('.01'), rounding=ROUND_DOWN)
             dto.converted = (Decimal(dto.rate) * Decimal(dto.amount)).quantize(Decimal('.01'), rounding=ROUND_DOWN)
+        # Кросс-курс
         elif self.model_exchange.get_exchange_rate('USD',
                                                    dto.baseCurrency.code) or self.model_exchange.get_exchange_rate(
                 'USD', dto.targetCurrency.code):
@@ -26,9 +35,11 @@ class ExchangeCurrencyCalculation:
                                                                                          rounding=ROUND_DOWN)
             dto.converted = (Decimal(dto.rate) * Decimal(dto.amount)).quantize(Decimal('.01'), rounding=ROUND_DOWN)
 
+        # Запрос данных для формирования DTO
         get_base_data = self.get_currency_for_dto(dto.baseCurrency.code)
         get_target_data = self.get_currency_for_dto(dto.targetCurrency.code)
 
+        # Добавление данных в DTO
         self.add_data_on_dto(dto.baseCurrency, get_base_data)
         self.add_data_on_dto(dto.targetCurrency, get_target_data)
         return dto
